@@ -1,2 +1,2 @@
 # Simple Scripts
-This repo has scripts that I use to perform basic tasks on my system
+This repo has scripts/programs that I use to perform basic tasks on my system
