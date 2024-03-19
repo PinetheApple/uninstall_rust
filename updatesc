@@ -1,0 +1,8 @@
+#!/bin/sh
+echo "Checking for package updates...";
+update_result=$(nala update | tail -n 1);
+echo "$update_result";
+
+if [ "$update_result" != "All packages are up to date." ]; then
+	nala upgrade;
+fi
