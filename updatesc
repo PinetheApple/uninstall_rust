@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 echo "Checking for package updates...";
 update_result=$(nala update | tail -n 1);
 echo "$update_result";
