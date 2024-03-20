@@ -1,9 +1,10 @@
 use clap::Parser;
 use std::env;
+use std::path::Path;
 
 #[derive(Parser, Debug)]
 #[clap(author = "Pine", version, about)]
-/// A program to delete programs and related files
+/// A program to delete programs and related files; This probably shouldn't exist but oh well :)
 struct Arguments {
     program_name: String,
     /// search only within a base directory and not using the $PATH variable; for multiple directories, place them in a string separated by a space
@@ -20,12 +21,12 @@ struct Arguments {
     save: bool,
 }
 
-fn is_valid_path(path: &str) {
-    println!("i think so");
-}
-
 fn path_exists(path: &str) {
-    println!("maybe??");
+    match Path::new(path).try_exists() {
+        Ok(true) => println!("{path}: Exists (0_0)"),
+        Ok(false) => println!("{path}: This path doesn't exist OR isn't a directory -_-; Try providing the absolute path to directory."),
+        Err(_) => println!("{path}: Oops! some issue locating that directory; Perhaps you don't have sufficient permission? Try running this with root privileges."),
+    };
 }
 
 fn _delete_config() {}
@@ -47,7 +48,6 @@ fn get_search_directories(
     let mut search_directories: Vec<String> = Vec::new();
     if base_directories[0] != "" {
         for directory in base_directories {
-            is_valid_path(directory);
             path_exists(directory);
             search_directories.push(directory.to_owned());
         }
@@ -55,7 +55,6 @@ fn get_search_directories(
     }
     if exclude_directories[0] != "" {
         for directory in exclude_directories {
-            is_valid_path(directory);
             path_directories.retain(|&x| x != directory);
         }
     }
@@ -64,7 +63,6 @@ fn get_search_directories(
     }
     if include_directories[0] != "" {
         for directory in include_directories {
-            is_valid_path(directory);
             path_exists(directory);
             search_directories.push(directory.to_owned());
         }
