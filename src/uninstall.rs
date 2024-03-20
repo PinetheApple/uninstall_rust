@@ -1,7 +1,6 @@
 use clap::Parser;
 use resolve_path::PathResolveExt;
 use std::env;
-use std::path::Path;
 
 #[derive(Parser, Debug)]
 #[clap(author = "Pine", version, about)]
@@ -22,12 +21,20 @@ struct Arguments {
     save: bool,
 }
 
-fn path_exists(path: &str) {
+fn path_exists(path: &str) -> bool {
     match path.try_resolve().unwrap().try_exists() {
-        Ok(true) => println!("{path}: \t\tExists (0_0)",),
-        Ok(false) => println!("{path}: \t\tThis path doesn't exist OR isn't a directory"),
-        Err(_) => println!("{path}: \t\tOops! some issue locating that directory; Perhaps you don't have sufficient permission? Try running this with root privileges."),
+        Ok(true) => {
+            println!("{path}: \t\tExists (0_0)",);
+            return true;
+        }
+        Ok(false) => {
+            println!("{path}: \t\tThis path doesn't exist OR isn't a directory")
+        }
+        Err(_) => {
+            println!("{path}: \t\tOops! some issue locating that directory; Perhaps you don't have sufficient permission? Try running this with root privileges.");
+        }
     };
+    return false;
 }
 
 fn _delete_config() {}
@@ -37,6 +44,15 @@ fn get_search_directories(
     exclude_directories: Vec<&str>,
     base_directories: Vec<&str>,
 ) -> Vec<String> {
+    let mut search_directories: Vec<String> = Vec::new();
+    if base_directories[0] != "" {
+        for directory in base_directories {
+            if path_exists(directory) {
+                search_directories.push(directory.to_owned());
+            }
+        }
+        return search_directories;
+    }
     let mut path = "".to_string();
     match env::var("PATH") {
         Ok(path_var) => path = path_var,
@@ -46,14 +62,6 @@ fn get_search_directories(
         ),
     };
     let mut path_directories: Vec<&str> = path.rsplit(":").collect();
-    let mut search_directories: Vec<String> = Vec::new();
-    if base_directories[0] != "" {
-        for directory in base_directories {
-            path_exists(directory);
-            search_directories.push(directory.to_owned());
-        }
-        return search_directories;
-    }
     if exclude_directories[0] != "" {
         for directory in exclude_directories {
             path_directories.retain(|&x| x != directory);
@@ -64,8 +72,9 @@ fn get_search_directories(
     }
     if include_directories[0] != "" {
         for directory in include_directories {
-            path_exists(directory);
-            search_directories.push(directory.to_owned());
+            if path_exists(directory) {
+                search_directories.push(directory.to_owned());
+            }
         }
     }
     search_directories
