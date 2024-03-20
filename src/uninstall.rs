@@ -20,12 +20,12 @@ struct Arguments {
     save: bool,
 }
 
-fn _is_valid_path(_path: &String) -> bool {
-    true
+fn is_valid_path(path: &str) {
+    print!("i think so");
 }
 
-fn _path_exists(_path: &String) -> bool {
-    true
+fn path_exists(path: &str) {
+    print!("maybe??");
 }
 
 fn _delete_config() {}
@@ -39,17 +39,33 @@ fn get_search_directories(
     match env::var("PATH") {
         Ok(path_var) => path = path_var,
         Err(e) => print!(
-            "Encountered an error trying to read the environment variable: {}",
+            "Encountered an error trying to read the $PATH environment variable: {}",
             e
         ),
     };
-    let path_directories: Vec<&str> = path.rsplit(":").collect();
+    let mut path_directories: Vec<&str> = path.rsplit(":").collect();
     let mut search_directories: Vec<String> = Vec::new();
     if base_directories[0] != "" {
         for directory in base_directories {
+            is_valid_path(directory);
+            path_exists(directory);
             search_directories.push(directory.to_owned());
         }
         return search_directories;
+    }
+    if exclude_directories[0] != "" {
+        for directory in exclude_directories {
+            is_valid_path(directory);
+            path_directories.retain(|&x| x != directory);
+            search_directories.push(directory.to_owned());
+        }
+    }
+    if include_directories[0] != "" {
+        for directory in include_directories {
+            is_valid_path(directory);
+            path_exists(directory);
+            search_directories.push(directory.to_owned());
+        }
     }
     search_directories
 }
