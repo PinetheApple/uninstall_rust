@@ -21,11 +21,11 @@ struct Arguments {
 }
 
 fn is_valid_path(path: &str) {
-    print!("i think so");
+    println!("i think so");
 }
 
 fn path_exists(path: &str) {
-    print!("maybe??");
+    println!("maybe??");
 }
 
 fn _delete_config() {}
@@ -57,8 +57,10 @@ fn get_search_directories(
         for directory in exclude_directories {
             is_valid_path(directory);
             path_directories.retain(|&x| x != directory);
-            search_directories.push(directory.to_owned());
         }
+    }
+    for directory in path_directories {
+        search_directories.push(directory.to_string());
     }
     if include_directories[0] != "" {
         for directory in include_directories {
