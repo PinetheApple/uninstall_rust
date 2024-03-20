@@ -1,4 +1,5 @@
 use clap::Parser;
+use resolve_path::PathResolveExt;
 use std::env;
 use std::path::Path;
 
@@ -22,10 +23,10 @@ struct Arguments {
 }
 
 fn path_exists(path: &str) {
-    match Path::new(path).try_exists() {
-        Ok(true) => println!("{path}: Exists (0_0)"),
-        Ok(false) => println!("{path}: This path doesn't exist OR isn't a directory -_-; Try providing the absolute path to directory."),
-        Err(_) => println!("{path}: Oops! some issue locating that directory; Perhaps you don't have sufficient permission? Try running this with root privileges."),
+    match path.try_resolve().unwrap().try_exists() {
+        Ok(true) => println!("{path}: \t\tExists (0_0)",),
+        Ok(false) => println!("{path}: \t\tThis path doesn't exist OR isn't a directory"),
+        Err(_) => println!("{path}: \t\tOops! some issue locating that directory; Perhaps you don't have sufficient permission? Try running this with root privileges."),
     };
 }
 

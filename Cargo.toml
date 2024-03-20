@@ -11,4 +11,5 @@ path = "src/uninstall.rs"
 
 [dependencies]
 clap = { version = "4.5.3", features = ["derive"] }
+resolve-path = "0.1.0"
 
