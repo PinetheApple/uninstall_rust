@@ -37,8 +37,6 @@ fn path_exists(path: &str) -> bool {
     return false;
 }
 
-fn _delete_config() {}
-
 fn get_search_directories(
     include_directories: Vec<&str>,
     exclude_directories: Vec<&str>,
@@ -77,18 +75,22 @@ fn get_search_directories(
             }
         }
     }
-    search_directories
+    return search_directories;
 }
+
+fn _find_files() {}
+
+fn _delete_config() {}
 
 fn main() {
     let args = Arguments::parse();
-
     let exclude_string = args.exclude.unwrap_or("".to_string());
     let exclude_directories: Vec<&str> = exclude_string.rsplit(' ').collect();
     let include_string = args.include.unwrap_or("".to_string());
     let include_directories: Vec<&str> = include_string.rsplit(' ').collect();
     let base_directory_string = args.base_dir.unwrap_or("".to_string());
     let base_directories: Vec<&str> = base_directory_string.rsplit(' ').collect();
+
     let search_directories =
         get_search_directories(include_directories, exclude_directories, base_directories);
     println!("{:?}", search_directories);
