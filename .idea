@@ -1,0 +1,13 @@
+basic functioning of uninstall.rs
+
+1. input program name; for example 'Cheese'
+2. search for a desktop entry for the program in '/usr/share/applications' and '~/.local/share/applications'
+3. if not found go to step [9]
+4. if found, confirm with user that the right file was found
+5. once confirmed, read the file and the executable (or location of the executable) and name of icon
+6. delete or move executable to a different location, [if it's an executable that doesn't take parameters (figure something else out if it does)]
+7. if the name of the icon isn't a path to a file, search for files/folders that have the name of the icon present in them and delete or move them to a different location
+8. delete configuration files present in ~/.config if option is selected by user
+9. search for file that matches name provided in directories present in the $PATH variable
+10. if not found, exit
+11. if found, perform step [5] and exit
