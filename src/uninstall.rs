@@ -81,21 +81,35 @@ fn _get_search_directories(
     return search_directories;
 }
 
-fn _handle_config_files() {}
+fn handle_config_files(app_name: &str) {}
 
-fn handle_application_files(name: &str) {
+fn handle_application_files(app_name: &str) {
     let application_files: Vec<String> = SearchBuilder::default()
         .location("/")
-        .search_input(name)
+        .search_input(app_name)
         .build()
         .collect();
 
     println!("Found application files- ");
-    for file_name in application_files {
+    for file_name in &application_files {
         println!("{file_name}");
     }
-    print!("Confirm deletion? (yes, no)");
+    print!("\nConfirm deletion of related files? (yes, no): ");
     stdout().flush().unwrap();
+    match helper::handle_binary_input() {
+        true => {
+            println!("Deleting application files...");
+            for file_name in application_files {
+                // remove_file(file_name).expect("Failed to remove file");
+                println!("whatever here remove this line");
+            }
+            println!("Deleted files successfully \n");
+        }
+        false => {
+            println!("Exiting program...");
+            exit(0);
+        }
+    }
 }
 
 fn handle_executable(executable: &str) {
@@ -155,6 +169,9 @@ fn read_desktop_file(desktop_file_path: &String) {
         exit(0);
     }
     handle_application_files(icon);
+    handle_config_files(icon);
+
+    // remove_file(desktop_file_path).expect("Couldn't delete desktop file!");
 }
 
 fn main() {

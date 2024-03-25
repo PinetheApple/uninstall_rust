@@ -7,7 +7,7 @@ pub fn handle_binary_input() -> bool {
             .read_line(&mut input)
             .expect("please enter something");
         match input.as_str().trim() {
-            "y" | "yes" | "ye" | "ja" => {
+            "y" | "yes" => {
                 return true;
             }
             "n" | "no" | "nein" => {
