@@ -1,24 +1,34 @@
 use clap::Parser;
+use regex::Regex;
 use resolve_path::PathResolveExt;
-use std::env;
+use rust_search::{similarity_sort, SearchBuilder};
+use std::process::{exit, Command};
+use std::{
+    env,
+    fs::{remove_file, File},
+    io::{stdin, Read},
+};
 
 #[derive(Parser, Debug)]
 #[clap(author = "Pine", version, about)]
 /// A program to delete programs and related files; This probably shouldn't exist but oh well :)
 struct Arguments {
     program_name: String,
-    /// search only within a base directory and not using the $PATH variable; for multiple directories, place them in a string separated by a space
-    #[arg(short, long, value_name = "BASE_DIR(s)")]
-    base_dir: Option<String>,
-    /// directory(s) to include in addition to directories present in $PATH variable; for multiple directories, place them in a string separated by a space
-    #[arg(short, long, value_name = "directory(s)")]
-    include: Option<String>,
-    /// directory(s) to exclude from directories present in $PATH variable; for multiple directories, place them in a string separated by a space
-    #[arg(short, long, value_name = "directory(s)")]
-    exclude: Option<String>,
-    /// save configuration files
-    #[arg(short, long, num_args = 0)]
-    save: bool,
+    // /// search only within a base directory and not using the $PATH variable; for multiple directories, place them in a string separated by a space
+    // #[arg(short, long, value_name = "BASE_DIR(s)")]
+    // base_dir: Option<String>,
+    // /// directory(s) to exclude from directories present in $PATH variable; for multiple directories, place them in a string separated by a space
+    // #[arg(short, long, value_name = "directory(s)")]
+    // exclude: Option<String>,
+    // /// save files in .config directories
+    // #[arg(short, long, num_args = 0)]
+    // save_config: bool,
+    // /// preserve files in application directories and files related to entries present in .desktop files; basically only delete the executable and the desktop entry
+    // #[arg(short, long, num_args = 0)]
+    // preserve: bool,
+    // /// automatically delete relevant files without asking for confirmation; not a great idea
+    // #[arg(short, long, num_args = 0)]
+    // auto: bool,
 }
 
 fn path_exists(path: &str) -> bool {
@@ -37,8 +47,7 @@ fn path_exists(path: &str) -> bool {
     return false;
 }
 
-fn get_search_directories(
-    include_directories: Vec<&str>,
+fn _get_search_directories(
     exclude_directories: Vec<&str>,
     base_directories: Vec<&str>,
 ) -> Vec<String> {
@@ -46,7 +55,7 @@ fn get_search_directories(
     if base_directories[0] != "" {
         for directory in base_directories {
             if path_exists(directory) {
-                search_directories.push(directory.to_owned());
+                search_directories.push(directory.to_string());
             }
         }
         return search_directories;
@@ -68,13 +77,6 @@ fn get_search_directories(
     for directory in path_directories {
         search_directories.push(directory.to_string());
     }
-    if include_directories[0] != "" {
-        for directory in include_directories {
-            if path_exists(directory) {
-                search_directories.push(directory.to_owned());
-            }
-        }
-    }
     return search_directories;
 }
 
@@ -82,16 +84,107 @@ fn _find_files() {}
 
 fn _delete_config() {}
 
+fn handle_application_files(name: &str) {}
+
+fn handle_executable(executable: &str) {
+    let output = Command::new("which")
+        .arg(executable)
+        .output()
+        .expect("Unable to run the 'which' command! Exiting")
+        .stdout;
+    println!("Executable found: {}", String::from_utf8_lossy(&output));
+    print!("Remove this executable? (yes, no): ");
+    let mut input = String::new();
+    stdin()
+        .read_line(&mut input)
+        .expect("please enter something");
+    match input.as_str().trim() {
+        "y" | "yes" | "ye" | "ja" => {
+            println!("Understood!");
+            remove_file(String::from_utf8_lossy(&output)[7..].to_string())
+                .expect("Failed to remove file");
+        }
+        "n" | "no" | "nein" => {
+            println!("Exiting program...");
+            exit(0)
+        }
+        _ => println!("invalid input, sorry"),
+    }
+}
+
+fn read_desktop_file(desktop_file_path: &String) {
+    let mut desktop_file = File::open(desktop_file_path).expect("Couldn't open that file!");
+
+    let mut file_contents = String::new();
+    desktop_file
+        .read_to_string(&mut file_contents)
+        .expect("Some issue trying to read that file into a string");
+
+    let exec_regex = Regex::new(r"^Exec=").unwrap();
+    let icon_regex = Regex::new(r"^Icon=").unwrap();
+    let mut executable = "";
+    let mut icon = "";
+
+    for line in file_contents.lines() {
+        if exec_regex.is_match(line) {
+            executable = &line[5..];
+        }
+        if icon_regex.is_match(line) {
+            icon = &line[5..];
+        }
+    }
+
+    handle_executable(executable);
+    handle_application_files(icon);
+}
+
 fn main() {
     let args = Arguments::parse();
-    let exclude_string = args.exclude.unwrap_or("".to_string());
-    let exclude_directories: Vec<&str> = exclude_string.rsplit(' ').collect();
-    let include_string = args.include.unwrap_or("".to_string());
-    let include_directories: Vec<&str> = include_string.rsplit(' ').collect();
-    let base_directory_string = args.base_dir.unwrap_or("".to_string());
-    let base_directories: Vec<&str> = base_directory_string.rsplit(' ').collect();
 
-    let search_directories =
-        get_search_directories(include_directories, exclude_directories, base_directories);
-    println!("{:?}", search_directories);
+    let mut matching_files: Vec<String> = SearchBuilder::default()
+        .location("/usr/share/applications")
+        .search_input(&args.program_name)
+        .more_locations(vec!["~/.local/share/applications"])
+        .ignore_case()
+        .build()
+        .collect();
+
+    similarity_sort(&mut matching_files, &args.program_name);
+    match matching_files.len() {
+        0 => {
+            println!("No matches for the program found in application directories!");
+        }
+        1 => {
+            println!("Match found: {}", matching_files[0]);
+            print!("Confirm deletion of related files? (yes, no): ");
+            let mut input = String::new();
+            stdin()
+                .read_line(&mut input)
+                .expect("please enter something");
+            match input.as_str().trim() {
+                "y" | "yes" | "ye" | "ja" => {
+                    println!("Understood!");
+                    read_desktop_file(&matching_files[0]);
+                }
+                "n" | "no" | "nein" => {
+                    println!("Aight, aborting");
+                    exit(0)
+                }
+                _ => println!("invalid input, sorry"),
+            }
+        }
+        _ => {
+            println!("Multiple matches found: ");
+            for i in 0..matching_files.len() {
+                println!("{}. {}", i + 1, matching_files[i]);
+            }
+        }
+    }
+
+    // let exclude_string = args.exclude.unwrap_or("".to_string());
+    // let exclude_directories: Vec<&str> = exclude_string.rsplit(' ').collect();
+    // let base_directory_string = args.base_dir.unwrap_or("".to_string());
+    // let base_directories: Vec<&str> = base_directory_string.rsplit(' ').collect();
+
+    // let _search_directories = get_search_directories(exclude_directories, base_directories);
 }
