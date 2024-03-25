@@ -6,8 +6,9 @@ use std::process::{exit, Command};
 use std::{
     env,
     fs::{remove_file, File},
-    io::{stdin, Read},
+    io::{prelude::*, stdout, Read},
 };
+mod helper;
 
 #[derive(Parser, Debug)]
 #[clap(author = "Pine", version, about)]
@@ -80,11 +81,22 @@ fn _get_search_directories(
     return search_directories;
 }
 
-fn _find_files() {}
+fn _handle_config_files() {}
 
-fn _delete_config() {}
+fn handle_application_files(name: &str) {
+    let application_files: Vec<String> = SearchBuilder::default()
+        .location("/")
+        .search_input(name)
+        .build()
+        .collect();
 
-fn handle_application_files(name: &str) {}
+    println!("Found application files- ");
+    for file_name in application_files {
+        println!("{file_name}");
+    }
+    print!("Confirm deletion? (yes, no)");
+    stdout().flush().unwrap();
+}
 
 fn handle_executable(executable: &str) {
     let output = Command::new("which")
@@ -92,23 +104,23 @@ fn handle_executable(executable: &str) {
         .output()
         .expect("Unable to run the 'which' command! Exiting")
         .stdout;
-    println!("Executable found: {}", String::from_utf8_lossy(&output));
+    println!(
+        "Executable found: {}",
+        String::from_utf8_lossy(&output).trim()
+    );
     print!("Remove this executable? (yes, no): ");
-    let mut input = String::new();
-    stdin()
-        .read_line(&mut input)
-        .expect("please enter something");
-    match input.as_str().trim() {
-        "y" | "yes" | "ye" | "ja" => {
-            println!("Understood!");
-            remove_file(String::from_utf8_lossy(&output)[7..].to_string())
-                .expect("Failed to remove file");
+    stdout().flush().unwrap();
+    match helper::handle_binary_input() {
+        true => {
+            println!("Deleting file...");
+            // remove_file(String::from_utf8_lossy(&output))
+            //     .expect("Failed to remove file");
+            println!("Deleted file successfully \n");
         }
-        "n" | "no" | "nein" => {
+        false => {
             println!("Exiting program...");
-            exit(0)
+            exit(0);
         }
-        _ => println!("invalid input, sorry"),
     }
 }
 
@@ -133,8 +145,15 @@ fn read_desktop_file(desktop_file_path: &String) {
             icon = &line[5..];
         }
     }
-
+    if executable == "" {
+        println!("Unable to find executable file!");
+        exit(0);
+    }
     handle_executable(executable);
+    if icon == "" {
+        println!("Unable to find icon!");
+        exit(0);
+    }
     handle_application_files(icon);
 }
 
@@ -143,7 +162,7 @@ fn main() {
 
     let mut matching_files: Vec<String> = SearchBuilder::default()
         .location("/usr/share/applications")
-        .search_input(&args.program_name)
+        .search_input(&args.program_name.replace(" ", "-"))
         .more_locations(vec!["~/.local/share/applications"])
         .ignore_case()
         .build()
@@ -157,20 +176,16 @@ fn main() {
         1 => {
             println!("Match found: {}", matching_files[0]);
             print!("Confirm deletion of related files? (yes, no): ");
-            let mut input = String::new();
-            stdin()
-                .read_line(&mut input)
-                .expect("please enter something");
-            match input.as_str().trim() {
-                "y" | "yes" | "ye" | "ja" => {
-                    println!("Understood!");
+            stdout().flush().unwrap();
+            match helper::handle_binary_input() {
+                true => {
+                    println!("Understood! \n");
                     read_desktop_file(&matching_files[0]);
                 }
-                "n" | "no" | "nein" => {
+                false => {
                     println!("Aight, aborting");
                     exit(0)
                 }
-                _ => println!("invalid input, sorry"),
             }
         }
         _ => {
