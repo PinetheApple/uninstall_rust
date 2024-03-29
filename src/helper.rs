@@ -69,7 +69,7 @@ pub fn get_search_directories(
     let mut path = "".to_string();
     match env::var("PATH") {
         Ok(path_var) => path = path_var,
-        Err(e) => print!(
+        Err(e) => println!(
             "Encountered an error trying to read the $PATH environment variable: {}",
             e
         ),
