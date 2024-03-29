@@ -4,9 +4,7 @@ use std::{env, io::stdin};
 pub fn handle_binary_input() -> bool {
     loop {
         let mut input = String::new();
-        stdin()
-            .read_line(&mut input)
-            .expect("please enter something");
+        stdin().read_line(&mut input).expect("Failed to read line!");
         match input.as_str().trim() {
             "y" | "yes" => {
                 return true;
@@ -16,6 +14,22 @@ pub fn handle_binary_input() -> bool {
             }
             _ => println!("invalid input, sorry"),
         }
+    }
+}
+
+pub fn handle_selection_input(length: usize) -> usize {
+    loop {
+        let mut input = String::new();
+        stdin().read_line(&mut input).expect("Failed to read line!");
+        match input.trim().parse::<usize>() {
+            Ok(selection) => {
+                if selection < length {
+                    return selection;
+                }
+            }
+            Err(_) => {}
+        }
+        println!("Please enter a valid choice!");
     }
 }
 
