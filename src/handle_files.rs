@@ -46,7 +46,9 @@ pub fn handle_config_files(application_name: &str, program_name: &str, executabl
                 .expect("Failed to delete config directory!");
             println!("Deleted config directory successfully.");
         }
-        false => {}
+        false => {
+            return;
+        }
     }
 }
 
