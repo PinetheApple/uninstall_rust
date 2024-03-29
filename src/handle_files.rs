@@ -1,9 +1,22 @@
 use crate::helper;
 use rust_search::SearchBuilder;
-use std::io::{prelude::*, stdout};
-use std::process::{exit, Command};
+use std::io::{prelude::Write, stdout};
+use std::process::Command;
 
-pub fn handle_config_files(app_name: &str) {}
+pub fn handle_config_files(application_name: &str) {
+    let config_directory: Vec<String> = SearchBuilder::default()
+        .location("~/.config")
+        .search_input(application_name)
+        .depth(1)
+        .build()
+        .collect();
+
+    if config_directory.len() == 0 {
+        println!("No config directory found!");
+        return;
+    }
+    println!("Found config directory: {}", config_directory[0]);
+}
 
 pub fn handle_application_files(app_name: &str) {
     let application_files: Vec<String> = SearchBuilder::default()
@@ -28,8 +41,7 @@ pub fn handle_application_files(app_name: &str) {
             println!("Deleted files successfully \n");
         }
         false => {
-            println!("Exiting program...");
-            exit(0);
+            return;
         }
     }
 }
@@ -54,8 +66,7 @@ pub fn handle_executable(executable: &str) {
             println!("Deleted file successfully \n");
         }
         false => {
-            println!("Exiting program...");
-            exit(0);
+            return;
         }
     }
 }

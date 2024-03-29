@@ -1,16 +1,15 @@
 use clap::Parser;
 use regex::Regex;
 use rust_search::{similarity_sort, SearchBuilder};
-use std::process::{exit, Command};
 use std::{
     fs::{remove_file, File},
-    io::{prelude::*, stdout, Read},
+    io::{prelude::Write, stdout, Read},
 };
 mod handle_files;
 mod helper;
 
 #[derive(Parser, Debug)]
-#[clap(author = "Pine", version, about)]
+#[clap(author = "BOBby", version, about)]
 /// A program to delete programs and related files; This probably shouldn't exist but oh well :)
 struct Arguments {
     program_name: String,
@@ -31,18 +30,20 @@ struct Arguments {
     // auto: bool,
 }
 
-fn read_desktop_file(desktop_file_path: &String) {
-    let mut desktop_file = File::open(desktop_file_path).expect("Couldn't open that file!");
+fn read_desktop_file(desktop_file_path: &String, program_name: &str) {
+    let mut desktop_file = File::open(desktop_file_path).expect("Couldn't open the desktop file!");
 
     let mut file_contents = String::new();
     desktop_file
         .read_to_string(&mut file_contents)
-        .expect("Some issue trying to read that file into a string");
+        .expect("Some issue trying to read the desktop file into a string");
 
     let exec_regex = Regex::new(r"^Exec=").unwrap();
     let icon_regex = Regex::new(r"^Icon=").unwrap();
+    let name_regex = Regex::new(r"^Name=").unwrap();
     let mut executable = "";
     let mut icon = "";
+    let mut name = "";
 
     for line in file_contents.lines() {
         if exec_regex.is_match(line) {
@@ -51,18 +52,22 @@ fn read_desktop_file(desktop_file_path: &String) {
         if icon_regex.is_match(line) {
             icon = &line[5..];
         }
+        if name_regex.is_match(line) {
+            name = &line[5..];
+        }
     }
     if executable == "" {
         println!("Unable to find executable file!");
-        exit(0);
+        return;
     }
     handle_files::handle_executable(executable);
     if icon == "" {
         println!("Unable to find icon!");
-        exit(0);
+        return;
     }
+    name = if name != "" { name } else { program_name };
     handle_files::handle_application_files(icon);
-    handle_files::handle_config_files(icon);
+    handle_files::handle_config_files(name);
 
     // remove_file(desktop_file_path).expect("Couldn't delete desktop file! Do u have sufficient permission?");
 }
@@ -82,6 +87,7 @@ fn main() {
     match matching_files.len() {
         0 => {
             println!("No matches for the program found in application directories!");
+            println!("Searching for executables...");
         }
         1 => {
             println!("Match found: {}", matching_files[0]);
@@ -90,11 +96,11 @@ fn main() {
             match helper::handle_binary_input() {
                 true => {
                     println!("Understood! \n");
-                    read_desktop_file(&matching_files[0]);
+                    read_desktop_file(&matching_files[0], &args.program_name);
                 }
                 false => {
-                    println!("Aight, aborting");
-                    exit(0)
+                    println!("Exiting program...");
+                    return;
                 }
             }
         }
@@ -109,11 +115,11 @@ fn main() {
             match selection {
                 0 => {
                     println!("Exiting program...");
-                    exit(0);
+                    return;
                 }
                 _ => {
                     println!("Understood! {}\n", &matching_files[selection - 1]);
-                    read_desktop_file(&matching_files[selection - 1]);
+                    read_desktop_file(&matching_files[selection - 1], &args.program_name);
                 }
             }
         }

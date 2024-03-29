@@ -4,7 +4,9 @@ use std::{env, io::stdin};
 pub fn handle_binary_input() -> bool {
     loop {
         let mut input = String::new();
-        stdin().read_line(&mut input).expect("Failed to read line!");
+        stdin()
+            .read_line(&mut input)
+            .expect("Failed to read input!");
         match input.as_str().trim() {
             "y" | "yes" => {
                 return true;
@@ -20,7 +22,9 @@ pub fn handle_binary_input() -> bool {
 pub fn handle_selection_input(length: usize) -> usize {
     loop {
         let mut input = String::new();
-        stdin().read_line(&mut input).expect("Failed to read line!");
+        stdin()
+            .read_line(&mut input)
+            .expect("Failed to read selection!");
         match input.trim().parse::<usize>() {
             Ok(selection) => {
                 if selection < length {
@@ -36,7 +40,7 @@ pub fn handle_selection_input(length: usize) -> usize {
 fn path_exists(path: &str) -> bool {
     match path.try_resolve().unwrap().try_exists() {
         Ok(true) => {
-            println!("{path}: \t\tExists (0_0)",);
+            println!("{path}: \t\tThe path provided exists");
             return true;
         }
         Ok(false) => {
