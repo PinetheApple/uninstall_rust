@@ -72,9 +72,6 @@ fn read_desktop_file(desktop_file_path: &String, program_name: &str) {
     };
     handle_files::handle_application_files(icon_name);
     handle_files::handle_config_files(display_name, program_name, executable_name);
-
-    remove_file(desktop_file_path)
-        .expect("Couldn't delete desktop file! Do u have sufficient permission?");
 }
 
 fn main() {
