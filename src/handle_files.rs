@@ -55,7 +55,7 @@ pub fn handle_config_files(application_name: &str, program_name: &str, executabl
 pub fn handle_application_files(app_name: &str) {
     println!("Searching for application files...");
     let application_files: Vec<String> = SearchBuilder::default()
-        .location("/")
+        .more_locations(vec!["/usr", "/var"])
         .search_input(app_name)
         .build()
         .collect();
