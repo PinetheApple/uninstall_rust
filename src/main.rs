@@ -36,94 +36,105 @@ fn read_desktop_file(desktop_file_path: &String, program_name: &str) {
     let mut file_contents = String::new();
     desktop_file
         .read_to_string(&mut file_contents)
-        .expect("Some issue trying to read the desktop file into a string");
+        .expect("Unable to read the desktop file into a string");
 
     let exec_regex = Regex::new(r"^Exec=").unwrap();
     let icon_regex = Regex::new(r"^Icon=").unwrap();
     let name_regex = Regex::new(r"^Name=").unwrap();
-    let mut executable = "";
-    let mut icon = "";
-    let mut name = "";
+    let mut executable_name = "";
+    let mut icon_name = "";
+    let mut display_name = "";
 
     for line in file_contents.lines() {
         if exec_regex.is_match(line) {
-            executable = &line[5..].split(" ").collect::<Vec<_>>()[0];
+            executable_name = &line[5..].split(" ").collect::<Vec<_>>()[0];
         }
         if icon_regex.is_match(line) {
-            icon = &line[5..];
+            icon_name = &line[5..];
         }
         if name_regex.is_match(line) {
-            name = &line[5..];
+            display_name = &line[5..];
         }
     }
-    if executable == "" {
+    if executable_name == "" {
         println!("Unable to find executable file!");
         return;
     }
-    handle_files::handle_executable(executable);
-    if icon == "" {
+    handle_files::handle_executable(executable_name);
+    if icon_name == "" {
         println!("Unable to find icon!");
         return;
     }
-    name = if name != "" { name } else { program_name };
-    handle_files::handle_application_files(icon);
-    handle_files::handle_config_files(name);
+    display_name = if display_name != "" {
+        display_name
+    } else {
+        program_name
+    };
+    handle_files::handle_application_files(icon_name);
+    handle_files::handle_config_files(display_name, program_name, executable_name);
 
-    // remove_file(desktop_file_path).expect("Couldn't delete desktop file! Do u have sufficient permission?");
+    remove_file(desktop_file_path)
+        .expect("Couldn't delete desktop file! Do u have sufficient permission?");
 }
 
 fn main() {
     let args = Arguments::parse();
 
-    let mut matching_files: Vec<String> = SearchBuilder::default()
-        .location("/usr/share/applications")
-        .search_input(&args.program_name.replace(" ", "-"))
-        .more_locations(vec!["~/.local/share/applications"])
-        .ignore_case()
-        .build()
-        .collect();
+    let (display_name, mut desktop_file_path) = helper::display_name_search(&args.program_name);
 
-    similarity_sort(&mut matching_files, &args.program_name);
-    match matching_files.len() {
-        0 => {
-            println!("No matches for the program found in application directories!");
-            println!("Searching for executables...");
-        }
-        1 => {
-            println!("Match found: {}", matching_files[0]);
-            print!("Confirm deletion of related files? (yes, no): ");
-            stdout().flush().unwrap();
-            match helper::handle_binary_input() {
-                true => {
-                    println!("Understood! \n");
-                    read_desktop_file(&matching_files[0], &args.program_name);
-                }
-                false => {
-                    println!("Exiting program...");
-                    return;
+    if desktop_file_path == "" {
+        let mut matching_files: Vec<String> = SearchBuilder::default()
+            .location("/usr/share/applications")
+            .search_input(&args.program_name.replace(" ", "-"))
+            .more_locations(vec!["~/.local/share/applications"])
+            .ignore_case()
+            .build()
+            .collect();
+
+        match matching_files.len() {
+            0 => {
+                println!("No matches for the program found in application directories!");
+                println!("Searching for executables...");
+            }
+            1 => {
+                println!("Match found: {}", matching_files[0]);
+                print!("Confirm deletion of related files? (yes, no): ");
+                stdout().flush().unwrap();
+                match helper::handle_binary_input() {
+                    true => {
+                        println!("Understood! \n");
+                        desktop_file_path = matching_files[0].to_owned();
+                    }
+                    false => {
+                        println!("Exiting program...");
+                        return;
+                    }
                 }
             }
-        }
-        _ => {
-            println!("Multiple matches found: ");
-            for i in 0..matching_files.len() {
-                println!("{}. {}", i + 1, matching_files[i]);
-            }
-            print!("Enter selection(0 or Ctrl+C to quit): ");
-            stdout().flush().unwrap();
-            let selection = helper::handle_selection_input(matching_files.len());
-            match selection {
-                0 => {
-                    println!("Exiting program...");
-                    return;
+            _ => {
+                similarity_sort(&mut matching_files, &args.program_name);
+                println!("Multiple matches found: ");
+                for i in 0..matching_files.len() {
+                    println!("{}. {}", i + 1, matching_files[i]);
                 }
-                _ => {
-                    println!("Understood! {}\n", &matching_files[selection - 1]);
-                    read_desktop_file(&matching_files[selection - 1], &args.program_name);
+                print!("Enter selection(0 or Ctrl+C to quit): ");
+                stdout().flush().unwrap();
+                let selection = helper::handle_selection_input(matching_files.len());
+                match selection {
+                    0 => {
+                        println!("Exiting program...");
+                        return;
+                    }
+                    _ => {
+                        println!("Understood! {}\n", &matching_files[selection - 1]);
+                        desktop_file_path = matching_files[selection - 1].to_owned();
+                    }
                 }
             }
         }
     }
+
+    read_desktop_file(&desktop_file_path, &display_name);
 
     // let exclude_string = args.exclude.unwrap_or("".to_string());
     // let exclude_directories: Vec<&str> = exclude_string.rsplit(' ').collect();
