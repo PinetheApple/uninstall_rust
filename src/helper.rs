@@ -118,7 +118,7 @@ fn get_env_variable(var_name: &str) -> String {
     }
 }
 
-pub fn get_search_directories(
+pub fn _get_search_directories(
     exclude_directories: Vec<&str>,
     base_directories: Vec<&str>,
 ) -> Vec<String> {

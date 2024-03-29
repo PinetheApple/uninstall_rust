@@ -133,8 +133,9 @@ fn main() {
             }
         }
     }
-
-    read_desktop_file(&desktop_file_path, &display_name);
+    if desktop_file_path != "" {
+        read_desktop_file(&desktop_file_path, &display_name);
+    }
 
     // let exclude_string = args.exclude.unwrap_or("".to_string());
     // let exclude_directories: Vec<&str> = exclude_string.rsplit(' ').collect();
