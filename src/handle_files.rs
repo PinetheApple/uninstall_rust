@@ -60,6 +60,10 @@ pub fn handle_application_files(app_name: &str) {
         .build()
         .collect();
 
+    if application_files.len() == 0 {
+        println!("No application files found.");
+        return;
+    }
     println!("Found application files- ");
     for file_name in &application_files {
         println!("{file_name}");
@@ -70,8 +74,16 @@ pub fn handle_application_files(app_name: &str) {
         true => {
             println!("Deleting application files...");
             for file_name in application_files {
-                remove_file(file_name)
-                    .expect("Failed to remove file! Do you have sufficient permission?");
+                match remove_file(&file_name) {
+                    Ok(_) => {}
+                    Err(_) => match remove_dir_all(file_name) {
+                        Ok(_) => {}
+                        Err(e) => {
+                            println!("Couldn't delete due to error: {e}");
+                        }
+                    },
+                }
+
                 print!(".");
                 stdout().flush().unwrap();
             }
