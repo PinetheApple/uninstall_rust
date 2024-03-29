@@ -6,6 +6,7 @@ use std::{
     fs::{remove_file, File},
     io::{prelude::*, stdout, Read},
 };
+mod handle_files;
 mod helper;
 
 #[derive(Parser, Debug)]
@@ -30,63 +31,6 @@ struct Arguments {
     // auto: bool,
 }
 
-fn handle_config_files(app_name: &str) {}
-
-fn handle_application_files(app_name: &str) {
-    let application_files: Vec<String> = SearchBuilder::default()
-        .location("/")
-        .search_input(app_name)
-        .build()
-        .collect();
-
-    println!("Found application files- ");
-    for file_name in &application_files {
-        println!("{file_name}");
-    }
-    print!("\nConfirm deletion of related files? (yes, no): ");
-    stdout().flush().unwrap();
-    match helper::handle_binary_input() {
-        true => {
-            println!("Deleting application files...");
-            for file_name in application_files {
-                // remove_file(file_name).expect("Failed to remove file");
-                println!("whatever here remove this line");
-            }
-            println!("Deleted files successfully \n");
-        }
-        false => {
-            println!("Exiting program...");
-            exit(0);
-        }
-    }
-}
-
-fn handle_executable(executable: &str) {
-    let output = Command::new("which")
-        .arg(executable)
-        .output()
-        .expect("Unable to run the 'which' command! Exiting")
-        .stdout;
-    println!(
-        "Executable found: {}",
-        String::from_utf8_lossy(&output).trim()
-    );
-    print!("Remove this executable? (yes, no): ");
-    stdout().flush().unwrap();
-    match helper::handle_binary_input() {
-        true => {
-            println!("Deleting file...");
-            // remove_file(String::from_utf8_lossy(&output))
-            //     .expect("Failed to remove file! Are u root?");
-            println!("Deleted file successfully \n");
-        }
-        false => {
-            println!("Exiting program...");
-            exit(0);
-        }
-    }
-}
-
 fn read_desktop_file(desktop_file_path: &String) {
     let mut desktop_file = File::open(desktop_file_path).expect("Couldn't open that file!");
 
@@ -102,7 +46,7 @@ fn read_desktop_file(desktop_file_path: &String) {
 
     for line in file_contents.lines() {
         if exec_regex.is_match(line) {
-            executable = &line[5..];
+            executable = &line[5..].split(" ").collect::<Vec<_>>()[0];
         }
         if icon_regex.is_match(line) {
             icon = &line[5..];
@@ -112,15 +56,15 @@ fn read_desktop_file(desktop_file_path: &String) {
         println!("Unable to find executable file!");
         exit(0);
     }
-    handle_executable(executable);
+    handle_files::handle_executable(executable);
     if icon == "" {
         println!("Unable to find icon!");
         exit(0);
     }
-    handle_application_files(icon);
-    handle_config_files(icon);
+    handle_files::handle_application_files(icon);
+    handle_files::handle_config_files(icon);
 
-    // remove_file(desktop_file_path).expect("Couldn't delete desktop file!");
+    // remove_file(desktop_file_path).expect("Couldn't delete desktop file! Do u have sufficient permission?");
 }
 
 fn main() {
@@ -158,6 +102,19 @@ fn main() {
             println!("Multiple matches found: ");
             for i in 0..matching_files.len() {
                 println!("{}. {}", i + 1, matching_files[i]);
+            }
+            print!("Enter selection(0 or Ctrl+C to quit): ");
+            stdout().flush().unwrap();
+            let selection = helper::handle_selection_input(matching_files.len());
+            match selection {
+                0 => {
+                    println!("Exiting program...");
+                    exit(0);
+                }
+                _ => {
+                    println!("Understood! {}\n", &matching_files[selection - 1]);
+                    read_desktop_file(&matching_files[selection - 1]);
+                }
             }
         }
     }
