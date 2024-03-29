@@ -2,7 +2,7 @@ use clap::Parser;
 use regex::Regex;
 use rust_search::{similarity_sort, SearchBuilder};
 use std::{
-    fs::{remove_file, File},
+    fs::File,
     io::{prelude::Write, stdout, Read},
 };
 mod handle_files;
