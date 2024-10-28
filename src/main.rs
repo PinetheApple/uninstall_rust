@@ -9,7 +9,7 @@ mod handle_files;
 mod helper;
 
 #[derive(Parser, Debug)]
-#[clap(author = "BOBby", version, about)]
+#[clap(author = "pine", version, about)]
 /// A program to delete programs and related files; This probably shouldn't exist but oh well :)
 struct Arguments {
     program_name: String,
@@ -91,7 +91,7 @@ fn main() {
         match matching_files.len() {
             0 => {
                 println!("No matches for the program found in application directories!");
-                println!("Searching for executables...");
+                println!("Searching for executables... TODO...");
             }
             1 => {
                 println!("Match found: {}", matching_files[0]);
