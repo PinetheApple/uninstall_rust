@@ -1,10 +1,59 @@
-use crate::helper::{self, handle_binary_input};
+use crate::helper::handle_binary_input;
+use regex::Regex;
 use rust_search::SearchBuilder;
+use std::error::Error;
+use std::fs;
 use std::{
     fs::{remove_dir_all, remove_file},
     io::{prelude::Write, stdout},
     process::Command,
 };
+
+pub fn read_desktop_file(
+    desktop_file_path: &String,
+    program_name: &str,
+) -> Result<(), Box<dyn Error>> {
+    let file_contents = fs::read_to_string(desktop_file_path)?;
+
+    let exec_regex = Regex::new(r"^Exec=").unwrap();
+    let icon_regex = Regex::new(r"^Icon=").unwrap();
+    let name_regex = Regex::new(r"^Name=").unwrap();
+    let mut executable_name = "";
+    let mut icon_name = "";
+    let mut display_name = "";
+
+    let _ = file_contents.lines().filter(|line| {
+        if exec_regex.is_match(line) {
+            executable_name = &line[5..].split(" ").collect::<Vec<_>>()[0];
+        }
+        if icon_regex.is_match(line) {
+            icon_name = &line[5..];
+        }
+        if name_regex.is_match(line) {
+            display_name = &line[5..];
+        }
+        true
+    });
+
+    if executable_name == "" {
+        return Err("Failed to find executable file!".into());
+    }
+    handle_executable(executable_name);
+
+    display_name = if display_name != "" {
+        display_name
+    } else {
+        program_name
+    };
+    handle_config_files(display_name, program_name, executable_name);
+
+    if icon_name == "" {
+        return Err("Failed to find icon!".into());
+    }
+    handle_application_files(icon_name);
+
+    Ok(())
+}
 
 pub fn handle_config_files(application_name: &str, program_name: &str, executable_name: &str) {
     println!("Searching for configuration directories with names \"{application_name}\" or \"{program_name}\" or \"{executable_name}\"");
@@ -70,7 +119,7 @@ pub fn handle_application_files(app_name: &str) {
     }
     print!("\nConfirm deletion of related files? (yes, no): ");
     stdout().flush().unwrap();
-    match helper::handle_binary_input() {
+    match handle_binary_input() {
         true => {
             println!("Deleting application files...");
             for file_name in application_files {
@@ -107,7 +156,7 @@ pub fn handle_executable(executable: &str) {
     );
     print!("Remove this executable? (yes, no): ");
     stdout().flush().unwrap();
-    match helper::handle_binary_input() {
+    match handle_binary_input() {
         true => {
             println!("Deleting file...");
             remove_file(String::from_utf8_lossy(&output).trim())
