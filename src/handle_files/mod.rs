@@ -56,7 +56,7 @@ pub fn read_desktop_file(
 }
 
 pub fn handle_config_files(application_name: &str, program_name: &str, executable_name: &str) {
-    println!("Searching for configuration directories with names \"{application_name}\" or \"{program_name}\" or \"{executable_name}\"");
+    println!("Searching for configuration directories with the name \"{application_name}\" or \"{program_name}\" or \"{executable_name}\"");
     let mut config_directory: Vec<String> = SearchBuilder::default()
         .location("~/.config")
         .search_input(application_name)
