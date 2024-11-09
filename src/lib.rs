@@ -28,7 +28,10 @@ pub struct Arguments {
 }
 
 pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
-    let (display_name, mut desktop_file_path) = helper::display_name_search(&args.program_name);
+    let Ok((display_name, mut desktop_file_path)) = helper::display_name_search(&args.program_name)
+    else {
+        return Err("Failed to get display name of the program!".into());
+    };
 
     if desktop_file_path == "" {
         let mut matching_files: Vec<String> = SearchBuilder::default()

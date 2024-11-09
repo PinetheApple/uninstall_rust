@@ -2,6 +2,7 @@ use regex::Regex;
 use resolve_path::PathResolveExt;
 use std::{
     env,
+    error::Error,
     fs::{read_dir, File},
     io::{prelude::Write, stdin, stdout, Read},
 };
@@ -43,26 +44,24 @@ pub fn handle_selection_input(length: usize) -> usize {
 }
 
 /// fn to get the program name and desktop file from a potential display name
-pub fn display_name_search(display_name: &str) -> (String, String) {
+pub fn display_name_search(display_name: &str) -> Result<(String, String), Box<dyn Error>> {
     let app_dir = "/usr/share/applications/";
     let name_regex = Regex::new(r"^Name=").unwrap();
-    let file_names = read_dir(app_dir).expect("Unable to view files in application directory!");
+    let file_names = read_dir(app_dir)?;
     for file_dir_entry in file_names {
         let res = file_dir_entry.unwrap();
-        let desktop_file_name = res
+        let desktop_file_name: String = res
             .file_name()
             .into_string()
-            .expect("Couldn't convert into valid String!");
+            .expect("Couldn't convert into a valid String!");
         if !desktop_file_name.ends_with(".desktop") {
             continue;
         }
         let desktop_file_path = String::from(app_dir) + &desktop_file_name;
-        let mut desktop_file = File::open(&desktop_file_path).expect("Couldn't open desktop file!");
+        let mut desktop_file = File::open(&desktop_file_path)?;
 
         let mut file_contents = String::new();
-        desktop_file
-            .read_to_string(&mut file_contents)
-            .expect("Unable to read the desktop file into a string");
+        desktop_file.read_to_string(&mut file_contents)?;
 
         for line in file_contents.lines() {
             if !name_regex.is_match(line) {
@@ -77,7 +76,7 @@ pub fn display_name_search(display_name: &str) -> (String, String) {
             stdout().flush().unwrap();
             match handle_binary_input() {
                 true => {
-                    return (actual_display_name.to_string(), desktop_file_path);
+                    return Ok((actual_display_name.to_string(), desktop_file_path));
                 }
                 false => {
                     break;
@@ -85,7 +84,7 @@ pub fn display_name_search(display_name: &str) -> (String, String) {
             }
         }
     }
-    return (display_name.to_string(), "".to_string());
+    return Ok((display_name.to_string(), "".to_string()));
 }
 
 fn _path_exists(path: &str) -> bool {
