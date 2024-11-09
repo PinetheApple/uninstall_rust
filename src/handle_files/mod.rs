@@ -32,7 +32,7 @@ pub fn read_desktop_file(
         if name_regex.is_match(line) {
             display_name = &line[5..];
         }
-        true
+        false
     });
 
     if executable_name == "" {
@@ -55,7 +55,7 @@ pub fn read_desktop_file(
     Ok(())
 }
 
-pub fn handle_config_files(application_name: &str, program_name: &str, executable_name: &str) {
+fn handle_config_files(application_name: &str, program_name: &str, executable_name: &str) {
     println!("Searching for configuration directories with the name \"{application_name}\" or \"{program_name}\" or \"{executable_name}\"");
     let mut config_directory: Vec<String> = SearchBuilder::default()
         .location("~/.config")
@@ -68,6 +68,7 @@ pub fn handle_config_files(application_name: &str, program_name: &str, executabl
         delete_config_dir(config_directory);
         return;
     }
+
     config_directory = SearchBuilder::default()
         .location("~/.config")
         .search_input(program_name)
@@ -78,6 +79,7 @@ pub fn handle_config_files(application_name: &str, program_name: &str, executabl
         delete_config_dir(config_directory);
         return;
     }
+
     config_directory = SearchBuilder::default()
         .location("~/.config")
         .search_input(executable_name)
@@ -91,7 +93,7 @@ pub fn handle_config_files(application_name: &str, program_name: &str, executabl
     delete_config_dir(config_directory);
 }
 
-pub fn handle_application_files(app_name: &str) {
+fn handle_application_files(app_name: &str) {
     println!("Searching for application files...");
     let application_files: Vec<String> = SearchBuilder::default()
         .more_locations(vec!["/usr", "/var"])
@@ -134,7 +136,7 @@ pub fn handle_application_files(app_name: &str) {
     }
 }
 
-pub fn handle_executable(executable: &str) {
+fn handle_executable(executable: &str) {
     let output = Command::new("which")
         .arg(executable)
         .output()
