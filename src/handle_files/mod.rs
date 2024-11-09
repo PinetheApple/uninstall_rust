@@ -65,8 +65,8 @@ pub fn handle_config_files(application_name: &str, program_name: &str, executabl
         .collect();
 
     if config_directory.len() != 0 {
-        println!("Found config directory: {:?}", config_directory);
-        delete_config_dir();
+        delete_config_dir(config_directory);
+        return;
     }
     config_directory = SearchBuilder::default()
         .location("~/.config")
@@ -75,7 +75,8 @@ pub fn handle_config_files(application_name: &str, program_name: &str, executabl
         .build()
         .collect();
     if config_directory.len() != 0 {
-        println!("Found config directory: {:?}", config_directory);
+        delete_config_dir(config_directory);
+        return;
     }
     config_directory = SearchBuilder::default()
         .location("~/.config")
@@ -87,19 +88,7 @@ pub fn handle_config_files(application_name: &str, program_name: &str, executabl
         println!("No config directory found.");
         return;
     }
-    println!("Found config directory: {}", config_directory[0]);
-    print!("Delete this directory? (yes, no): ");
-    stdout().flush().unwrap();
-    match handle_binary_input() {
-        true => {
-            remove_dir_all(config_directory[0].to_owned())
-                .expect("Failed to delete config directory!");
-            println!("Deleted config directory successfully.");
-        }
-        false => {
-            return;
-        }
-    }
+    delete_config_dir(config_directory);
 }
 
 pub fn handle_application_files(app_name: &str) {
@@ -170,4 +159,18 @@ pub fn handle_executable(executable: &str) {
     }
 }
 
-fn delete_config_dir() {}
+fn delete_config_dir(config_directory: Vec<String>) {
+    println!("Found config directory: {}", config_directory[0]);
+    print!("Delete this directory? (yes, no): ");
+    stdout().flush().unwrap();
+    match handle_binary_input() {
+        true => {
+            remove_dir_all(config_directory[0].to_owned())
+                .expect("Failed to delete config directory!");
+            println!("Deleted config directory successfully.");
+        }
+        false => {
+            return;
+        }
+    }
+}
