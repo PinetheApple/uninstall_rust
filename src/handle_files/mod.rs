@@ -66,6 +66,7 @@ pub fn handle_config_files(application_name: &str, program_name: &str, executabl
 
     if config_directory.len() != 0 {
         println!("Found config directory: {:?}", config_directory);
+        delete_config_dir();
     }
     config_directory = SearchBuilder::default()
         .location("~/.config")
@@ -168,3 +169,5 @@ pub fn handle_executable(executable: &str) {
         }
     }
 }
+
+fn delete_config_dir() {}
